@@ -59,6 +59,8 @@ def calculate_option_price(initial_price, strike_price, volatility, days, simula
             payoff = max(final_price - strike_price, 0)
         elif option_type == 'put':
             payoff = max(strike_price - final_price, 0)  # ← Note: strike FIRST
+        else:
+            raise ValueError("option_type must be 'call' or 'put'")
         payoffs.append(payoff)
     option_price = np.mean(payoffs) * np.exp(-r * T)
     return option_price, prices
@@ -225,5 +227,7 @@ if __name__ == "__main__":
     plt.savefig('option_pricing_dashboard.png', dpi=100, bbox_inches='tight')
     print("\n✓ Professional dashboard saved!")
     plt.show()
+ 
+ 
  
 
