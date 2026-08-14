@@ -1,4 +1,5 @@
 # Monte Carlo Option Pricing Tool
+![Tests](https://github.com/ananyatyagiiii/option-pricing-tool/actions/workflows/tests.yml/badge.svg)
 
 A professional financial tool that prices European call and put options using Monte Carlo simulation, validated against the Black-Scholes analytical formula.
 
