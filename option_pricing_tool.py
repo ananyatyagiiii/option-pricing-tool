@@ -41,15 +41,18 @@ def black_scholes_call(S0, K, T, r, sigma):
     return call_price
  
 def calculate_option_price(initial_price, strike_price, volatility, days, simulations, r, T, option_type='call'):
-    # Convert annual volatility to daily volatility
-    daily_volatility = volatility / np.sqrt(252)  # 252 trading days per year
+    # One simulation step = one slice of T, so the step size and T agree.
+    # (Using 252 here while T is measured in 365-day years inflates volatility
+    # by sqrt(365/252) = 1.20x, which is why prices used to run ~20% hot.)
+    dt = T / days
+    daily_volatility = volatility * np.sqrt(dt)
  
     payoffs = []
     for sim in range(simulations):
         price = initial_price
         prices = [price]
         for day in range(days):
-            daily_return_mean = r / 252  # Convert annual rate to daily
+            daily_return_mean = r * dt  # Convert annual rate to one step
             daily_return_std = daily_volatility  # ← Use daily, not annual
             random_return = np.random.normal(daily_return_mean, daily_return_std)
             price *= (1 + random_return)
@@ -227,7 +230,3 @@ if __name__ == "__main__":
     plt.savefig('option_pricing_dashboard.png', dpi=100, bbox_inches='tight')
     print("\n✓ Professional dashboard saved!")
     plt.show()
- 
- 
- 
-
