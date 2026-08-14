@@ -1,11 +1,3 @@
-
-Test option pricing · PY
-"""
-Unit tests for the Monte Carlo Option Pricing Tool.
- 
-Run locally with:  python -m pytest test_option_pricing.py -v
-"""
- 
 import numpy as np
  
 from option_pricing_tool import (
