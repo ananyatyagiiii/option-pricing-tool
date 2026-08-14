@@ -1,4 +1,6 @@
 # Monte Carlo Option Pricing Tool
+
+![Tests](https://github.com/ananyatyagiiii/option-pricing-tool/actions/workflows/tests.yml/badge.svg)
 ![Tests](https://github.com/ananyatyagiiii/option-pricing-tool/actions/workflows/tests.yml/badge.svg)
 
 A professional financial tool that prices European call and put options using Monte Carlo simulation, validated against the Black-Scholes analytical formula.
@@ -22,7 +24,7 @@ Imagine you want to buy a call option on a stock:
 
 A broker offers to sell it for $10. **Is that fair?**
 
-This tool calculates: "The fair price is $8.57"
+This tool calculates: "The fair price is $6.04"
 
 **Conclusion:** The broker is overpricing it. Don't buy! ❌
 
@@ -145,19 +147,19 @@ Then input your parameters. Results will display in terminal + save a profession
 
 ```
 CALL OPTIONS
-Vol 5%:  MC=$3.83  vs  BS=$2.05
-Vol 15%: MC=$8.57  vs  BS=$6.04
-Vol 30%: MC=$15.77 vs BS=$11.98
+Vol 5%:  MC=$2.04  vs  BS=$2.05
+Vol 15%: MC=$6.00  vs  BS=$6.04
+Vol 30%: MC=$11.94 vs BS=$11.98
 
 PUT OPTIONS
-Vol 5%:  MC=$1.44  vs  BS=$1.93
-Vol 15%: MC=$6.20  vs  BS=$5.91
-Vol 30%: MC=$13.49 vs BS=$11.86
+Vol 5%:  MC=$1.95  vs  BS=$1.93
+Vol 15%: MC=$5.89  vs  BS=$5.91
+Vol 30%: MC=$11.76 vs BS=$11.86
 
 ✓ Professional dashboard saved!
 ```
 
-The small differences (1-10%) are normal due to Monte Carlo sampling noise. Increase simulations to 500,000 for even closer convergence.
+Monte Carlo lands within **1%** of the analytical price at 60,000 simulations. The remaining gap is sampling noise, which shrinks as 1/sqrt(N) - increase the simulation count for a tighter match.
 
 ---
 
@@ -184,7 +186,26 @@ The small differences (1-10%) are normal due to Monte Carlo sampling noise. Incr
 ## Files
 
 - `option_pricing_tool.py` - Main script
+- `test_option_pricing.py` - Unit test suite (18 tests)
+- `requirements.txt` - Python dependencies
+- `.github/workflows/tests.yml` - Continuous integration
 - `option_pricing_dashboard.png` - Generated visualization
+
+---
+
+## Testing
+
+The suite covers the analytical formulas, the simulation engine, and the agreement
+between them:
+
+```bash
+pip install -r requirements.txt
+python -m pytest test_option_pricing.py -v
+```
+
+18 tests, running on Python 3.9 through 3.12 via GitHub Actions on every push.
+The strongest check is put-call parity - `C - P` must equal `S - K*exp(-rT)`, an
+identity that holds by arbitrage regardless of any pricing model.
 
 ---
 
