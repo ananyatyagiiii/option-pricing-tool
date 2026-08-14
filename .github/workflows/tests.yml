@@ -1,206 +1,35 @@
-Unit tests for Monte Carlo Option Pricing Tool
-"""
- 
-import pytest
-import numpy as np
-from option_pricing_script import (
-    simulate_stock_path,
-    calculate_option_price,
-    black_scholes_option
-)
- 
- 
-class TestSimulateStockPath:
-    """Tests for stock path simulation"""
- 
-    def test_initial_price_correct(self):
-        """First price in path should equal initial stock price"""
-        S0 = 100
-        path = simulate_stock_path(S0, r=0.05, sigma=0.2, T=1, num_steps=252)
-        assert path[0] == S0
- 
-    def test_path_has_correct_length(self):
-        """Path should have correct number of steps"""
-        num_steps = 252
-        path = simulate_stock_path(100, r=0.05, sigma=0.2, T=1, num_steps=num_steps)
-        assert len(path) == num_steps
- 
-    def test_path_all_positive(self):
-        """Stock prices should always be positive"""
-        path = simulate_stock_path(100, r=0.05, sigma=0.2, T=1, num_steps=252)
-        assert np.all(path > 0)
- 
-    def test_volatility_affects_path_variance(self):
-        """Higher volatility should lead to higher variance in paths"""
-        np.random.seed(42)
-        path_low_vol = simulate_stock_path(100, r=0.05, sigma=0.05, T=1, num_steps=252)
- 
-        np.random.seed(42)
-        path_high_vol = simulate_stock_path(100, r=0.05, sigma=0.30, T=1, num_steps=252)
- 
-        # High volatility path should have higher variance
-        assert np.var(path_high_vol) > np.var(path_low_vol)
- 
- 
-class TestCalculateOptionPrice:
-    """Tests for option pricing calculation"""
- 
-    def test_call_option_price_positive(self):
-        """Call option price should always be non-negative"""
-        price, _, _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
-        assert price >= 0
- 
-    def test_put_option_price_positive(self):
-        """Put option price should always be non-negative"""
-        price, _, _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='put'
-        )
-        assert price >= 0
- 
-    def test_itm_call_worth_more_than_otm(self):
-        """In-the-money call should be worth more than out-of-money call"""
-        # ITM: stock at 100, strike at 90
-        itm_price, _, _, _ = calculate_option_price(
-            S0=100, K=90, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
- 
-        # OTM: stock at 100, strike at 110
-        otm_price, _, _, _ = calculate_option_price(
-            S0=100, K=110, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
- 
-        assert itm_price > otm_price
- 
-    def test_confidence_interval_valid(self):
-        """Confidence interval should bracket the price"""
-        price, (ci_lower, ci_upper), _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
-        assert ci_lower <= price <= ci_upper
- 
-    def test_more_simulations_tighter_ci(self):
-        """More simulations should give tighter confidence interval"""
-        _, (ci_lower_1k, ci_upper_1k), _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
- 
-        _, (ci_lower_5k, ci_upper_5k), _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=5000, option_type='call'
-        )
- 
-        width_1k = ci_upper_1k - ci_lower_1k
-        width_5k = ci_upper_5k - ci_lower_5k
- 
-        # 5k simulations should have tighter CI
-        assert width_5k < width_1k
- 
-    def test_put_call_relationship(self):
-        """Higher strike should increase put value and decrease call value"""
-        call_100, _, _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
- 
-        call_110, _, _, _ = calculate_option_price(
-            S0=100, K=110, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='call'
-        )
- 
-        put_100, _, _, _ = calculate_option_price(
-            S0=100, K=100, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='put'
-        )
- 
-        put_110, _, _, _ = calculate_option_price(
-            S0=100, K=110, r=0.05, sigma=0.2, T=1,
-            num_simulations=1000, option_type='put'
-        )
- 
-        # Call decreases with higher strike
-        assert call_100 > call_110
-        # Put increases with higher strike
-        assert put_110 > put_100
- 
- 
-class TestBlackScholesOption:
-    """Tests for Black-Scholes analytical pricing"""
- 
-    def test_bs_call_price_positive(self):
-        """Black-Scholes call price should be non-negative"""
-        price = black_scholes_option(100, 100, T=1, r=0.05, sigma=0.2, option_type='call')
-        assert price >= 0
- 
-    def test_bs_put_price_positive(self):
-        """Black-Scholes put price should be non-negative"""
-        price = black_scholes_option(100, 100, T=1, r=0.05, sigma=0.2, option_type='put')
-        assert price >= 0
- 
-    def test_bs_atm_call_put_symmetry(self):
-        """For ATM options, relationship C - P = S - K·e^(-rT) should hold"""
-        S = 100
-        K = 100
-        T = 1
-        r = 0.05
-        sigma = 0.2
- 
-        call_price = black_scholes_option(S, K, T, r, sigma, option_type='call')
-        put_price = black_scholes_option(S, K, T, r, sigma, option_type='put')
- 
-        parity_lhs = call_price - put_price
-        parity_rhs = S - K * np.exp(-r * T)
- 
-        # Should be approximately equal (allow small numerical error)
-        assert abs(parity_lhs - parity_rhs) < 0.01
- 
-    def test_bs_converges_to_intrinsic_at_expiration(self):
-        """At expiration (T→0), call should approach max(S-K, 0)"""
-        S = 110
-        K = 100
-        T = 0.001  # Very close to expiration
-        r = 0.05
-        sigma = 0.2
- 
-        call_price = black_scholes_option(S, K, T, r, sigma, option_type='call')
-        intrinsic_value = max(S - K, 0)
- 
-        # Should be very close to intrinsic value
-        assert abs(call_price - intrinsic_value) < 1.0
- 
- 
-class TestMCvsBlackScholes:
-    """Tests comparing Monte Carlo to Black-Scholes"""
- 
-    def test_mc_converges_to_bs(self):
-        """Monte Carlo should converge to Black-Scholes with enough simulations"""
-        S0 = 100
-        K = 100
-        r = 0.05
-        sigma = 0.2
-        T = 1
- 
-        mc_price, _, _, _ = calculate_option_price(
-            S0, K, r, sigma, T,
-            num_simulations=5000, option_type='call'
-        )
- 
-        bs_price = black_scholes_option(S0, K, T, r, sigma, option_type='call')
- 
-        # Should be within 10% (reasonable tolerance for smaller sample)
-        relative_error = abs(mc_price - bs_price) / bs_price
-        assert relative_error < 0.10
- 
- 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
- 
+name: Tests
 
-Downloaded tests_1.yml Show in Finder
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest test_option_pricing.py -v --tb=short
+
+      - name: Run linting
+        run: |
+          pip install flake8
+          flake8 option_pricing_script.py --count --select=E9,F63,F7,F82 --show-source --statistics
