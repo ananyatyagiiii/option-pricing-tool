@@ -133,9 +133,9 @@ class TestMonteCarloVsAnalytical:
                                        option_type='call')
         bs = black_scholes_call(100, 100, T, R, 0.20)
  
-        # Loose bound: this MC model uses calendar days with a trading-day
-        # volatility scale, so it is directionally right rather than exact.
-        assert 0.2 * bs < mc < 5 * bs
+        # Now that the step size matches T, MC should track BS closely.
+        # 15% allows for sampling noise (worst observed: 6.4% over 12 runs).
+        assert abs(mc - bs) / bs < 0.15
  
     def test_put_is_within_an_order_of_magnitude(self):
         np.random.seed(42)
@@ -143,7 +143,4 @@ class TestMonteCarloVsAnalytical:
                                        option_type='put')
         bs = black_scholes_put(100, 100, T, R, 0.20)
  
-        assert 0.2 * bs < mc < 5 * bs
- 
-
-
+        assert abs(mc - bs) / bs < 0.15
