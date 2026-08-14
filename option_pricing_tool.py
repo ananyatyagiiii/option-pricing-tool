@@ -1,5 +1,3 @@
-
-Option pricing tool · PY
 import numpy as np
 import matplotlib
  
